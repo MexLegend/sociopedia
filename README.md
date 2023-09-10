@@ -1,4 +1,4 @@
-# Real State
+# Sociopedia
 
 <img src="https://res.cloudinary.com/devmexsoft/image/upload/v1691990365/Projects%20Thumbnails/Real_State_Thumbnail_yv0n1s.png" height="400px"/>
 
@@ -6,12 +6,12 @@
 
 ## Prerequisites
 - Make sure you have the API setup first
-- [Link](https://github.com/MexLegend/angular-real-state-api)
+- [Link](https://github.com/MexLegend/sociopedia-api)
 
 ## Cloning the repository
 
 ```shell
-git clone https://github.com/MexLegend/angular-real-state-app.git
+git clone https://github.com/MexLegend/sociopedia.git
 ```
 
 ## Getting Started
@@ -24,15 +24,6 @@ $ pnpm i
 $ npm i
 ```
 
-Setup .environment file
-
-```js
-URI: 
-MAPBOX_TOKEN: 
-CLOUDINARY_NAME:
-CLOUDINARY_PRESET:
-```
-
 Start the app
 
 ```sh
@@ -43,4 +34,6 @@ $ npm run start
 
 ## Built With
 
-- Angular 16
+- React 18
+- Redux
+- MUI
