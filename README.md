@@ -27,7 +27,7 @@ $ npm i
 Setup .environment file
 
 ```js
-API:
+REACT_APP_API:
 ```
 
 Start the app
