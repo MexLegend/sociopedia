@@ -24,6 +24,12 @@ $ pnpm i
 $ npm i
 ```
 
+Setup .environment file
+
+```js
+API:
+```
+
 Start the app
 
 ```sh
