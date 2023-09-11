@@ -1,6 +1,6 @@
 # Sociopedia
 
-<img src="https://res.cloudinary.com/devmexsoft/image/upload/v1691990365/Projects%20Thumbnails/Real_State_Thumbnail_yv0n1s.png" height="400px"/>
+<img src="https://res.cloudinary.com/devmexsoft/image/upload/v1694391270/Projects%20Thumbnails/SocialPedia_Thumbnail_eyreaa.png" height="400px"/>
 
 ### [Demo](https://angular-real-state-app.vercel.app)
 
