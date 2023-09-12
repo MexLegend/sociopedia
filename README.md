@@ -44,4 +44,5 @@ $ npm run start
 - React 18
 - Redux
 - MongoDB
+- Cloudinary
 - MUI
