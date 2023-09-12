@@ -1,29 +1,15 @@
 import { useState } from "react";
 import { Box, Button, TextField, useMediaQuery, Typography, useTheme } from "@mui/material";
-import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
 import { Formik } from "formik";
-import { FormikHelpers, FormikValues } from "formik/dist/types";
+import { FormikHelpers, FormikState, FormikValues } from "formik/dist/types";
 import * as yup from "yup";
+import { Assign, ObjectShape } from "yup/lib/object";
 import { useNavigate } from "react-router-dom";
 import { useDispatch } from "react-redux";
 import { setLogin } from "../../redux/slice";
-import Dropzone from "react-dropzone";
 import FlexBetween from "components/FlexBetween";
-
-const registerSchema = yup.object().shape({
-    firstName: yup.string().required("required"),
-    lastName: yup.string().required("required"),
-    email: yup.string().email("invalid email").required("required"),
-    password: yup.string().required("required"),
-    location: yup.string().required("required"),
-    occupation: yup.string().required("required"),
-    imgFile: yup.string().required("required")
-});
-
-const loginSchema = yup.object().shape({
-    email: yup.string().email("invalid email").required("required"),
-    password: yup.string().required("required"),
-});
+import UploadWidget from 'components/UploadWidget';
+import { ClearOutlined } from "@mui/icons-material";
 
 interface ValuesForm {
     firstName?: string;
@@ -33,62 +19,88 @@ interface ValuesForm {
     location?: string;
     occupation?: string;
     imgPath?: string;
-    imgFile?: File;
 }
 
-const initialValuesRegister = {
-    firstName: "",
-    lastName: "",
-    email: "",
-    password: "",
-    location: "",
-    occupation: "",
-    imgPath: "",
-    imgFile: "",
-};
-
-const initialValuesLogin = {
-    email: "",
-    password: "",
-};
-
 const Form = () => {
-    const [pageType, setPageType] = useState("login");
+
+    const registerSchema = yup.object().shape({
+        firstName: yup.string().required("required"),
+        lastName: yup.string().required("required"),
+        email: yup.string().email("invalid email").required("required"),
+        password: yup.string().required("required"),
+        location: yup.string().required("required"),
+        occupation: yup.string().required("required"),
+        imgPath: yup.string().required("required")
+    });
+
+    const loginSchema = yup.object().shape({
+        email: yup.string().email("invalid email").required("required"),
+        password: yup.string().required("required"),
+    });
+
+    const initialValuesRegister = {
+        firstName: "",
+        lastName: "",
+        email: "",
+        password: "",
+        location: "",
+        occupation: "",
+        imgPath: ""
+    };
+
+    const initialValuesLogin = {
+        email: "",
+        password: "",
+    };
+
+    const [isLogin, setIsLogin] = useState(true);
+    const [validationSchema, setValidationSchema] = useState<yup.ObjectSchema<Assign<ObjectShape, any>>>(loginSchema);
+    const [initialValues, setInitialValues] = useState<ValuesForm>(initialValuesLogin);
+
     const { palette } = useTheme();
     const dispatch = useDispatch();
     const navigate = useNavigate();
     const isNonMobile = useMediaQuery("(min-width:600px)");
-    const isLogin = pageType === "login";
-    const isRegister = pageType === "register";
+
+    const handleFormAction = (resetForm: (nextState?: Partial<FormikState<ValuesForm>> | undefined) => void) => {
+        const isLoginAux: boolean = !isLogin;
+
+        setIsLogin(isLoginAux);
+        setValidationSchema(isLoginAux ? loginSchema : registerSchema);
+        setInitialValues(isLoginAux ? initialValuesLogin : initialValuesRegister);
+        resetForm();
+    }
 
     const register = async (values: FormikValues, onSubmitProps: FormikHelpers<ValuesForm>) => {
-        // this allows us to send form info with image
-        const formData = new FormData();
-        for (let value in values) {
-            formData.append(value, values[value]);
-        }
-        formData.append("imgPath", values.imgFile.name);
 
         const savedUserResponse = await fetch(
             `${process.env.REACT_APP_API}/api/auth/register`,
             {
                 method: "POST",
-                body: formData,
+                headers: {
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(values)
             }
         );
         const savedUser = await savedUserResponse.json();
         onSubmitProps.resetForm();
 
         if (savedUser) {
-            setPageType("login");
+            setIsLogin(true);
+            setValidationSchema(loginSchema);
+            setInitialValues(initialValuesLogin);
         }
     };
 
     const login = async (values: ValuesForm, onSubmitProps: FormikHelpers<ValuesForm>) => {
-
         const loggedInResponse = await fetch(`${process.env.REACT_APP_API}/api/auth/login`, {
             method: "POST",
-            headers: { "Content-Type": "application/json", 'Accept': 'application/json' },
+            headers: {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json'
+            },
             body: JSON.stringify(values),
         });
         const loggedIn = await loggedInResponse.json();
@@ -105,16 +117,49 @@ const Form = () => {
         }
     };
 
+    const handleUpload = (error: any, result: any, widget: any, setFieldValue: (field: string, value: any, shouldValidate?: boolean | undefined) => void) => {
+        if (error) {
+            console.log(error);
+
+            widget.close({
+                quiet: true
+            });
+
+            return;
+        }
+        setFieldValue("imgPath", result.info.secure_url, true);
+    }
+
+    const handleDeleteImage = async (event: React.MouseEvent, image: string, setFieldValue: (field: string, value: any, shouldValidate?: boolean | undefined) => void) => {
+
+        event.stopPropagation();
+
+        const publicId = image.split('ReactWeb1').pop()?.split(".")[0];
+
+        const deleteResponse = await fetch(`${process.env.REACT_APP_API}/api/cloudinary/ReactWeb1${publicId}`, {
+            method: "DELETE"
+        });
+
+        const isDeleted = await deleteResponse.json();
+
+        if (isDeleted.ok) {
+            setFieldValue("imgPath", '', true);
+        }
+    }
+
     const handleFormSubmit = async (values: ValuesForm, onSubmitProps: FormikHelpers<ValuesForm>) => {
+        console.log({ isLogin });
+
         if (isLogin) await login(values, onSubmitProps);
-        if (isRegister) await register(values, onSubmitProps);
+        if (!isLogin) await register(values, onSubmitProps);
     };
 
     return (
         <Formik
             onSubmit={handleFormSubmit}
-            initialValues={isLogin ? initialValuesLogin : initialValuesRegister}
-            validationSchema={isLogin ? loginSchema : registerSchema}
+            initialValues={initialValues}
+            validationSchema={validationSchema}
+            enableReinitialize={true}
         >
             {({
                 values,
@@ -124,7 +169,7 @@ const Form = () => {
                 handleChange,
                 handleSubmit,
                 setFieldValue,
-                resetForm,
+                resetForm
             }) => (
                 <form onSubmit={handleSubmit}>
                     <Box
@@ -136,14 +181,13 @@ const Form = () => {
                         }}
                     >
                         {
-                            isRegister && (
+                            !isLogin && (
                                 <>
-
                                     <TextField
                                         label="First Name"
                                         onBlur={handleBlur}
                                         onChange={handleChange}
-                                        value={values.firstName}
+                                        value={values.firstName || ''}
                                         name="firstName"
                                         error={
                                             Boolean(touched.firstName) && Boolean(errors.firstName)
@@ -155,7 +199,7 @@ const Form = () => {
                                         label="Last Name"
                                         onBlur={handleBlur}
                                         onChange={handleChange}
-                                        value={values.lastName}
+                                        value={values.lastName || ''}
                                         name="lastName"
                                         error={Boolean(touched.lastName) && Boolean(errors.lastName)}
                                         helperText={touched.lastName && errors.lastName}
@@ -165,7 +209,7 @@ const Form = () => {
                                         label="Location"
                                         onBlur={handleBlur}
                                         onChange={handleChange}
-                                        value={values.location}
+                                        value={values.location || ''}
                                         name="location"
                                         error={Boolean(touched.location) && Boolean(errors.location)}
                                         helperText={touched.location && errors.location}
@@ -175,7 +219,7 @@ const Form = () => {
                                         label="Occupation"
                                         onBlur={handleBlur}
                                         onChange={handleChange}
-                                        value={values.occupation}
+                                        value={values.occupation || ''}
                                         name="occupation"
                                         error={
                                             Boolean(touched.occupation) && Boolean(errors.occupation)
@@ -183,39 +227,76 @@ const Form = () => {
                                         helperText={touched.occupation && errors.occupation}
                                         sx={{ gridColumn: "span 4" }}
                                     />
-                                    <Box
-                                        gridColumn="span 4"
-                                        border={`1px solid ${palette.neutral.medium}`}
-                                        borderRadius="5px"
-                                        p="1rem"
-                                    >
-                                        <Dropzone
-                                            accept={{ 'image/*': ['.jpeg', '.jpg', '.png'] }}
-                                            multiple={false}
-                                            onDrop={(acceptedFiles) =>
-                                                setFieldValue("imgFile", acceptedFiles[0])
-                                            }
+                                    <div style={{ width: "100%", gridColumn: 'span 4' }}>
+                                        <Box
+                                            gridColumn="span 4"
+                                            border={`1px solid ${Boolean(touched.imgPath) && Boolean(errors.imgPath)
+                                                ? '#d32f2f'
+                                                : palette.neutral.medium}`}
+                                            borderRadius="5px"
+                                            p="1rem"
+                                        >                                        <UploadWidget
+                                            options={{ maxFiles: 1, folder: "ReactWeb1" }}
+                                            onUpload={(error: any, result: any, widget: any) => handleUpload(error, result, widget, setFieldValue)}
+                                            uploadPreset="react_web_1"
+                                            disabled={!!values.imgPath}
                                         >
-                                            {({ getRootProps, getInputProps }) => (
-                                                <Box
-                                                    {...getRootProps()}
-                                                    border={`2px dashed ${palette.primary.main}`}
-                                                    p="1rem"
-                                                    sx={{ "&:hover": { cursor: "pointer" } }}
-                                                >
-                                                    <input {...getInputProps()} />
-                                                    {!values.imgFile ? (
-                                                        <p>Add Picture Here</p>
-                                                    ) : (
-                                                        <FlexBetween>
-                                                            <Typography>{values.imgFile.name}</Typography>
-                                                            <EditOutlinedIcon />
-                                                        </FlexBetween>
-                                                    )}
-                                                </Box>
-                                            )}
-                                        </Dropzone>
-                                    </Box>
+                                                {!values.imgPath ? (
+                                                    <Button
+                                                        type="button"
+                                                        sx={{
+                                                            p: "1rem",
+                                                            backgroundColor: palette.primary.main,
+                                                            color: palette.background.alt,
+                                                            "&:hover": { backgroundColor: '#03b7d6' },
+                                                        }}
+                                                    >
+                                                        Select image
+                                                    </Button>
+                                                ) : (
+                                                    <FlexBetween>
+                                                        <img
+                                                            src={values.imgPath}
+                                                            alt="avatars"
+                                                            width={60}
+                                                            height={60}
+                                                            style={{
+                                                                borderRadius: 9999,
+                                                                border: `1px solid ${palette.neutral.medium}`,
+                                                                overflow: "clip"
+                                                            }}
+                                                        />
+                                                        <Button
+                                                            type="button"
+                                                            sx={{
+                                                                p: ".3rem",
+                                                                pointerEvents: 'auto',
+                                                                minWidth: 'max-content',
+                                                                borderRadius: 9999,
+                                                                backgroundColor: 'transparent',
+                                                                color: 'black',
+                                                                "&:hover": { backgroundColor: '#03b7d6', color: 'white' },
+                                                            }}
+                                                            onClick={(e) => handleDeleteImage(e, values.imgPath!, setFieldValue)}
+                                                        >
+                                                            <ClearOutlined />
+                                                        </Button>
+                                                    </FlexBetween>
+                                                )}
+                                            </UploadWidget>
+                                        </Box>
+                                        {
+                                            Boolean(touched.imgPath) && Boolean(errors.imgPath) && (
+                                                <span style={{
+                                                    color: '#d32f2f',
+                                                    margin: '3px 14px 0',
+                                                    fontSize: '0.6428571428571428rem'
+                                                }}>
+                                                    required
+                                                </span>
+                                            )
+                                        }
+                                    </div>
                                 </>
                             )}
 
@@ -223,7 +304,7 @@ const Form = () => {
                             label="Email"
                             onBlur={handleBlur}
                             onChange={handleChange}
-                            value={values.email}
+                            value={values.email || ''}
                             name="email"
                             error={Boolean(touched.email) && Boolean(errors.email)}
                             helperText={touched.email && errors.email}
@@ -234,7 +315,7 @@ const Form = () => {
                             type="password"
                             onBlur={handleBlur}
                             onChange={handleChange}
-                            value={values.password}
+                            value={values.password || ''}
                             name="password"
                             autoComplete="on"
                             error={Boolean(touched.password) && Boolean(errors.password)}
@@ -259,10 +340,7 @@ const Form = () => {
                             {isLogin ? "LOGIN" : "REGISTER"}
                         </Button>
                         <Typography
-                            onClick={() => {
-                                setPageType(isLogin ? "register" : "login");
-                                resetForm();
-                            }}
+                            onClick={() => handleFormAction(resetForm)}
                             sx={{
                                 textDecoration: "underline",
                                 color: palette.primary.main,

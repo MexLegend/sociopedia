@@ -162,6 +162,7 @@ const MyPostWidget = ({ imgPath }: { imgPath: string }) => {
                         color: palette.background.alt,
                         backgroundColor: palette.primary.main,
                         borderRadius: "3rem",
+                        ":disabled": { color: "rgba(255, 255, 255, 0.8)" }
                     }}
                 >
                     POST
