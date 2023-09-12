@@ -2,7 +2,7 @@
 
 <img src="https://res.cloudinary.com/devmexsoft/image/upload/v1694391270/Projects%20Thumbnails/SocialPedia_Thumbnail_eyreaa.png" height="400px"/>
 
-### [Demo](https://angular-real-state-app.vercel.app)
+### [Demo](https://sociopedia-network.vercel.app)
 
 ## Prerequisites
 - Make sure you have the API setup first
