@@ -6,14 +6,14 @@ import { setFriends, User } from '../redux/slice';
 import FlexBetween from "./FlexBetween";
 import UserImage from "./UserImage";
 
-interface Friend {
+interface FriendProps {
     friendId: string;
     name: string;
     subtitle: string;
     userImgPath: string;
 }
 
-const Friend = ({ friendId, name, subtitle, userImgPath }: Friend) => {
+const Friend = ({ friendId, name, subtitle, userImgPath }: FriendProps) => {
     const dispatch = useAppDispatch();
     const navigate = useNavigate();
     const { _id } = useAppSelector((state) => state.user!);

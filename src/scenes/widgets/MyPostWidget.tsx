@@ -1,11 +1,10 @@
 import {
-    EditOutlined,
-    DeleteOutlined,
     AttachFileOutlined,
     GifBoxOutlined,
     ImageOutlined,
     MicOutlined,
     MoreHorizOutlined,
+    ClearOutlined,
 } from "@mui/icons-material";
 import {
     Box,
@@ -14,22 +13,22 @@ import {
     InputBase,
     useTheme,
     Button,
-    IconButton,
     useMediaQuery,
 } from "@mui/material";
 import FlexBetween from "components/FlexBetween";
-import Dropzone from "react-dropzone";
 import UserImage from "components/UserImage";
 import WidgetWrapper from "components/WidgetWrapper";
 import { useState } from "react";
 import { useAppDispatch, useAppSelector } from '../../redux/hooks';
 import { setPosts } from "redux/slice";
 import { Post } from '../../redux/slice';
+import UploadWidget from "components/UploadWidget";
 
 const MyPostWidget = ({ imgPath }: { imgPath: string }) => {
+
     const dispatch = useAppDispatch();
     const [isImage, setIsImage] = useState(false);
-    const [image, setImage] = useState<File | null>(null);
+    const [image, setImage] = useState<string | null>(null);
     const [post, setPost] = useState("");
     const { palette } = useTheme();
     const { _id } = useAppSelector((state) => state.user!);
@@ -38,23 +37,58 @@ const MyPostWidget = ({ imgPath }: { imgPath: string }) => {
     const mediumMain = palette.neutral.mediumMain;
     const medium = palette.neutral.medium;
 
+    const handleUpload = (error: any, result: any, widget: any) => {
+        if (error) {
+            console.log(error);
+
+            widget.close({
+                quiet: true
+            });
+
+            return;
+        }
+        setImage(result.info.secure_url);
+    }
+
+    const handleDeleteImage = async (event: React.MouseEvent) => {
+
+        event.stopPropagation();
+
+        const publicId = image?.split('ReactWeb1').pop()?.split(".")[0];
+
+        const deleteResponse = await fetch(`${process.env.REACT_APP_API}/api/cloudinary/ReactWeb1${publicId}`, {
+            method: "DELETE"
+        });
+
+        const isDeleted = await deleteResponse.json();
+
+        if (isDeleted.ok) {
+            setImage(null);
+        }
+    }
+
     const handlePost = async () => {
-        const formData = new FormData();
-        formData.append("userId", _id);
-        formData.append("description", post);
-        if (image) {
-            formData.append("imgFile", image);
-            formData.append("imgPath", image.name);
+
+        const bodyPayload = {
+            userId: _id,
+            description: post,
+            imgPath: image
         }
 
         const response = await fetch(`${process.env.REACT_APP_API}/api/posts`, {
             method: "POST",
-            headers: { Authorization: `Bearer ${token}` },
-            body: formData,
+            headers: {
+                Authorization: `Bearer ${token}`,
+                'Accept': 'application/json',
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(bodyPayload)
         });
+
         const { posts }: { posts: Post[] } = await response.json();
         dispatch(setPosts(posts));
         setImage(null);
+        setIsImage(false);
         setPost("");
     };
 
@@ -81,41 +115,55 @@ const MyPostWidget = ({ imgPath }: { imgPath: string }) => {
                     mt="1rem"
                     p="1rem"
                 >
-                    <Dropzone
-                        accept={{ 'image/*': ['.jpeg', '.jpg', '.png'] }}
-                        multiple={false}
-                        onDrop={(acceptedFiles) => setImage(acceptedFiles[0])}
+                    <UploadWidget
+                        options={{ maxFiles: 1, folder: "ReactWeb1" }}
+                        onUpload={(error: any, result: any, widget: any) => handleUpload(error, result, widget)}
+                        uploadPreset="react_web_1"
+                        disabled={!!image}
                     >
-                        {({ getRootProps, getInputProps }) => (
+                        {!image ? (
+                            <Button
+                                type="button"
+                                sx={{
+                                    p: ".5rem 1rem",
+                                    backgroundColor: palette.primary.main,
+                                    color: palette.background.alt,
+                                    "&:hover": { backgroundColor: '#03b7d6' },
+                                }}
+                            >
+                                Select image
+                            </Button>
+                        ) : (
                             <FlexBetween>
-                                <Box
-                                    {...getRootProps()}
-                                    border={`2px dashed ${palette.primary.main}`}
-                                    p="1rem"
-                                    width="100%"
-                                    sx={{ "&:hover": { cursor: "pointer" } }}
+                                <img
+                                    src={image}
+                                    alt="avatars"
+                                    width={60}
+                                    height={60}
+                                    style={{
+                                        borderRadius: 9999,
+                                        border: `1px solid ${palette.neutral.medium}`,
+                                        overflow: "clip"
+                                    }}
+                                />
+                                <Button
+                                    type="button"
+                                    sx={{
+                                        p: ".3rem",
+                                        pointerEvents: 'auto',
+                                        minWidth: 'max-content',
+                                        borderRadius: 9999,
+                                        backgroundColor: 'transparent',
+                                        color: mediumMain,
+                                        "&:hover": { backgroundColor: '#03b7d6', color: 'white' },
+                                    }}
+                                    onClick={handleDeleteImage}
                                 >
-                                    <input {...getInputProps()} />
-                                    {!image ? (
-                                        <p>Add Image Here</p>
-                                    ) : (
-                                        <FlexBetween>
-                                            <Typography>{image.name}</Typography>
-                                            <EditOutlined />
-                                        </FlexBetween>
-                                    )}
-                                </Box>
-                                {image && (
-                                    <IconButton
-                                        onClick={() => setImage(null)}
-                                        sx={{ width: "15%" }}
-                                    >
-                                        <DeleteOutlined />
-                                    </IconButton>
-                                )}
+                                    <ClearOutlined />
+                                </Button>
                             </FlexBetween>
                         )}
-                    </Dropzone>
+                    </UploadWidget>
                 </Box>
             )}
 

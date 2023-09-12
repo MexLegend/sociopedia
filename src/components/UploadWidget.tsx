@@ -1,4 +1,4 @@
-import { FC, useEffect, useRef, useState } from "react"
+import { FC, useEffect, useState } from "react"
 
 interface Props {
     children: React.ReactNode,
@@ -47,7 +47,7 @@ const UploadWidget: FC<Props> = ({ children, options, uploadPreset, onUpload, di
             cloudName: process.env.REACT_APP_CLOUDINARY_CLOUD_NAME,
             uploadPreset
         }
-
+        
         return cloudinary?.createUploadWidget(widgetOptions,
             function (error: any, result: any) {
                 // The callback is a bit more chatty than failed or success so
@@ -66,7 +66,7 @@ const UploadWidget: FC<Props> = ({ children, options, uploadPreset, onUpload, di
      * @description When triggered, uses the current widget instance to open the upload modal
      */
 
-    const open = () => {
+    const open = () => {      
 
         if (!widget) {
             const widget = createWidget();

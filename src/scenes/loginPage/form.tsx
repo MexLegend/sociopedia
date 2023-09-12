@@ -148,8 +148,6 @@ const Form = () => {
     }
 
     const handleFormSubmit = async (values: ValuesForm, onSubmitProps: FormikHelpers<ValuesForm>) => {
-        console.log({ isLogin });
-
         if (isLogin) await login(values, onSubmitProps);
         if (!isLogin) await register(values, onSubmitProps);
     };
@@ -235,12 +233,13 @@ const Form = () => {
                                                 : palette.neutral.medium}`}
                                             borderRadius="5px"
                                             p="1rem"
-                                        >                                        <UploadWidget
-                                            options={{ maxFiles: 1, folder: "ReactWeb1" }}
-                                            onUpload={(error: any, result: any, widget: any) => handleUpload(error, result, widget, setFieldValue)}
-                                            uploadPreset="react_web_1"
-                                            disabled={!!values.imgPath}
                                         >
+                                            <UploadWidget
+                                                options={{ maxFiles: 1, folder: "ReactWeb1" }}
+                                                onUpload={(error: any, result: any, widget: any) => handleUpload(error, result, widget, setFieldValue)}
+                                                uploadPreset="react_web_1"
+                                                disabled={!!values.imgPath}
+                                            >
                                                 {!values.imgPath ? (
                                                     <Button
                                                         type="button"
