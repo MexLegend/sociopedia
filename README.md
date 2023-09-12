@@ -27,7 +27,8 @@ $ npm i
 Setup .environment file
 
 ```js
-REACT_APP_API:
+REACT_APP_API=
+REACT_APP_CLOUDINARY_CLOUD_NAME=
 ```
 
 Start the app
